@@ -89,8 +89,7 @@ def create_products():
     #
     # Uncomment this line of code once you implement READ A PRODUCT
     #
-    # location_url = url_for("get_products", product_id=product.id, _external=True)
-    location_url = "/"  # delete once READ is implemented
+    location_url = url_for("get_products", product_id=product.id, _external=True)
     return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
 
 
@@ -101,6 +100,13 @@ def create_products():
 #
 # PLACE YOUR CODE TO LIST ALL PRODUCTS HERE
 #
+@app.route("/products", methods=["GET"])
+def list_products():
+    """Lists all products"""
+    app.logger.info("Processing request to list Products...")
+    products = Product.all()
+    results = [Product.serialize() for product in products]
+    return jsonify(results), status.HTTP_200_OK
 
 ######################################################################
 # R E A D   A   P R O D U C T
@@ -109,6 +115,15 @@ def create_products():
 #
 # PLACE YOUR CODE HERE TO READ A PRODUCT
 #
+@app.route("/products/<int:product_id>", methods=["GET"])
+def get_product(product_id):
+    """Reads a Product by its ID"""
+    app.logger.info("Processing request to read Product with id %s...", product_id)
+    product = Product.find(product_id)
+    if product:
+        return jsonify(product.serialize()), status.HTTP_200_OK
+    else:
+        abort(status.HTTP_404_NOT_FOUND, "Product not found")
 
 ######################################################################
 # U P D A T E   A   P R O D U C T
@@ -117,6 +132,19 @@ def create_products():
 #
 # PLACE YOUR CODE TO UPDATE A PRODUCT HERE
 #
+@app.route("/products/<int:product_id>", methods=["PUT"])
+def update_product(product_id):
+    """Updates a Product by its ID"""
+    app.logger.info("Processing request to update Product with id %s...", product_id)
+    check_content_type("application/json")
+    data = request.get_json()
+    product = Product.find(product_id)
+    if product:
+        product.deserialize(data)
+        product.update()
+        return jsonify(product.serialize()), status.HTTP_200_OK
+    else:
+        abort(status.HTTP_404_NOT_FOUND, "Product not found")
 
 ######################################################################
 # D E L E T E   A   P R O D U C T
@@ -126,3 +154,13 @@ def create_products():
 #
 # PLACE YOUR CODE TO DELETE A PRODUCT HERE
 #
+@app.route("/products/<int:product_id>", methods=["DELETE"])
+def delete_product(product_id):
+    """Deletes a Product by its ID"""
+    app.logger.info("Processing request to delete Product with id %s...", product_id)
+    product = Product.find(product_id)
+    if product:
+        product.delete()
+        return jsonify({"message": "Product deleted"}), status.HTTP_200_OK
+    else:
+        abort(status.HTTP_404_NOT_FOUND, "Product not found")
